@@ -11,35 +11,20 @@
 - 通过企业 ID（corpId）获取企业微信访问令牌
 - 返回 access_token 和过期时间
 
-## 输入参数
-
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| corpId | string | 是 | 企业微信的企业 ID |
-
 ## 输出参数
 
-| 参数名 | 类型 | 说明 |
-|--------|------|------|
-| access_token | string | 企业微信访问令牌 |
-| expires_in | number | Token 过期时间（秒） |
+| 参数名       | 类型   | 说明                 |
+| ------------ | ------ | -------------------- |
+| access_token | string | 企业微信访问令牌     |
+| expires_in   | number | Token 过期时间（秒） |
 
 ## 使用示例
 
 ### 在工作流中使用
 
 1. 添加"企业微信授权"工具节点
-2. 输入企业 ID（corpId）
-3. 获取返回的 access_token 和 expires_in
-4. 将 access_token 传递给后续需要调用企业微信 API 的节点
-
-### 示例配置
-
-```json
-{
-  "corpId": "ww1234567890abcdef"
-}
-```
+2. 获取返回的 access_token 和 expires_in
+3. 将 access_token 传递给后续需要调用企业微信 API 的节点
 
 ### 示例输出
 

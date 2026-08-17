@@ -6,18 +6,21 @@ import {
   type SecretSchemaMetaType,
 } from "@fastgpt-plugin/sdk-factory";
 import z from "zod";
-import { InputType, OutputType, SearchResultType, tool as toolCb } from "./src";
+import {
+  InputType,
+  OutputType,
+  SearchResultType,
+  UrlType,
+  tool as toolCb,
+} from "./src";
 
 const secretSchema = z.object({
-  url: z
-    .string()
-    .url()
-    .meta({
-      title: "SearXNG 实例地址",
-      description:
-        "填写自建或可信的 SearXNG 实例地址，例如 https://search.example.com",
-      isSecret: false,
-    } satisfies SecretSchemaMetaType),
+  url: UrlType.meta({
+    title: "SearXNG 实例地址",
+    description:
+      "填写自建或可信的 SearXNG 实例地址，例如 https://search.example.com",
+    isSecret: false,
+  } satisfies SecretSchemaMetaType),
 });
 const inputSchema = z.object({
   query: z
@@ -34,12 +37,6 @@ const outputSchema = z.object({
     title: "搜索结果",
     description: "检索结果",
   } satisfies OutputSchemaMetaType),
-  error: z
-    .string()
-    .optional()
-    .meta({
-      title: "错误信息",
-    } satisfies OutputSchemaMetaType),
 });
 const handler = createToolHandler({
   inputSchema,
@@ -66,10 +63,10 @@ const tool = defineTool({
       en: "Use a configured SearXNG instance for web search.",
       "zh-CN": "使用配置的 SearXNG 实例进行网络搜索。",
     },
-    version: "0.1.2",
+    version: "0.2.0",
     versionDescription: {
-      en: "Use the SearXNG JSON Search API and configure the instance URL.",
-      "zh-CN": "使用 SearXNG JSON 搜索 API，并支持配置实例地址。",
+      en: "Use the SearXNG JSON Search API with a configured instance URL.",
+      "zh-CN": "使用 SearXNG JSON 搜索 API，并配置实例地址。",
     },
     tags: ["search"],
   },

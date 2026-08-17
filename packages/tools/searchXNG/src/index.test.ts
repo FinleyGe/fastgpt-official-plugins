@@ -76,4 +76,74 @@ describe("searchXNG tool", () => {
       tool({ query: "query", url: "https://search.example.com" }),
     ).rejects.toThrow("SearXNG request failed: 403");
   });
+
+  it("rejects empty result sets", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ results: [] })),
+      ),
+    );
+
+    await expect(
+      tool({ query: "query", url: "https://search.example.com" }),
+    ).rejects.toThrow("No search results");
+  });
+
+  it("rejects malformed JSON responses", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response("not json", { status: 200 }),
+      ),
+    );
+
+    await expect(
+      tool({ query: "query", url: "https://search.example.com" }),
+    ).rejects.toThrow();
+  });
+
+  it("normalizes fields and limits the result list", async () => {
+    const results = Array.from({ length: 11 }, (_, index) => ({
+      title: index === 0 ? null : `Title ${index}`,
+      url: index === 0 ? null : `https://example.com/${index}`,
+      content: index === 0 ? null : `Content ${index}`,
+    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ results })),
+      ),
+    );
+
+    const result = await tool({
+      query: "query",
+      url: "https://search.example.com",
+    });
+
+    expect(result.result).toHaveLength(10);
+    expect(result.result[0]).toEqual({ title: "", link: "", snippet: "" });
+  });
+
+  it("only accepts HTTP and HTTPS instances", async () => {
+    await expect(
+      tool({ query: "query", url: "ftp://search.example.com" }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects oversized responses before parsing all results", async () => {
+    const oversizedResponse = JSON.stringify({
+      results: [{ title: "Result", url: "", content: "x".repeat(2 * 1024 * 1024) }],
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(oversizedResponse, { status: 200 }),
+      ),
+    );
+
+    await expect(
+      tool({ query: "query", url: "https://search.example.com" }),
+    ).rejects.toThrow("SearXNG response is too large");
+  });
 });

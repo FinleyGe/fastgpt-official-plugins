@@ -1,8 +1,18 @@
 import { z } from "zod";
 
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+
+export const UrlType = z
+  .string()
+  .url()
+  .refine((value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  }, "SearXNG URL must use http or https");
+
 export const InputType = z.object({
   query: z.string().min(1),
-  url: z.string().url(),
+  url: UrlType,
 });
 
 export const SearchResultType = z.object({
@@ -13,8 +23,19 @@ export const SearchResultType = z.object({
 
 export const OutputType = z.object({
   result: z.array(SearchResultType),
-  error: z.string().optional(),
 });
+
+const SearXNGResponseType = z
+  .object({
+    results: z.array(
+      z.object({
+        title: z.string().nullish().transform((value) => value ?? ""),
+        url: z.string().nullish().transform((value) => value ?? ""),
+        content: z.string().nullish().transform((value) => value ?? ""),
+      }),
+    ),
+  })
+  .passthrough();
 
 function getSearchUrl(url: string, query: string): string {
   const endpoint = new URL(url);
@@ -29,6 +50,44 @@ function getSearchUrl(url: string, query: string): string {
   endpoint.searchParams.set("language", "auto");
 
   return endpoint.toString();
+}
+
+async function getResponseJson(response: Response): Promise<unknown> {
+  const contentLength = response.headers.get("content-length");
+  if (contentLength && Number(contentLength) > MAX_RESPONSE_BYTES) {
+    throw new Error("SearXNG response is too large");
+  }
+
+  if (!response.body) {
+    const text = await response.text();
+    if (new TextEncoder().encode(text).byteLength > MAX_RESPONSE_BYTES) {
+      throw new Error("SearXNG response is too large");
+    }
+    return JSON.parse(text);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const chunks: string[] = [];
+  let bytesRead = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    bytesRead += value.byteLength;
+    if (bytesRead > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error("SearXNG response is too large");
+    }
+
+    chunks.push(decoder.decode(value, { stream: true }));
+  }
+
+  chunks.push(decoder.decode());
+  return JSON.parse(chunks.join(""));
 }
 
 function getErrorMessage(error: unknown): string {
@@ -56,28 +115,9 @@ export async function tool({
   }
 
   try {
-    const data: unknown = await response.json();
-    const results = z
-      .object({
-        results: z.array(
-          z.object({
-            title: z
-              .string()
-              .nullish()
-              .transform((value) => value ?? ""),
-            url: z
-              .string()
-              .nullish()
-              .transform((value) => value ?? ""),
-            content: z
-              .string()
-              .nullish()
-              .transform((value) => value ?? ""),
-          }),
-        ),
-      })
-      .passthrough()
-      .parse(data).results;
+    const results = SearXNGResponseType.parse(
+      await getResponseJson(response),
+    ).results;
 
     if (results.length === 0) {
       throw new Error("No search results");

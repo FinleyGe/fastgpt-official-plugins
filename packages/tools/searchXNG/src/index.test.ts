@@ -44,15 +44,13 @@ describe("searchXNG tool", () => {
   });
 
   it("keeps an explicitly configured search endpoint", async () => {
-    const fetchMock = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            results: [{ title: "Result", url: "", content: "" }],
-          }),
-        ),
-      );
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          results: [{ title: "Result", url: "", content: "" }],
+        }),
+      ),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
     await tool({
@@ -80,9 +78,9 @@ describe("searchXNG tool", () => {
   it("rejects empty result sets", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn<typeof fetch>().mockResolvedValue(
-        new Response(JSON.stringify({ results: [] })),
-      ),
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response(JSON.stringify({ results: [] }))),
     );
 
     await expect(
@@ -93,9 +91,9 @@ describe("searchXNG tool", () => {
   it("rejects malformed JSON responses", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn<typeof fetch>().mockResolvedValue(
-        new Response("not json", { status: 200 }),
-      ),
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response("not json", { status: 200 })),
     );
 
     await expect(
@@ -111,9 +109,9 @@ describe("searchXNG tool", () => {
     }));
     vi.stubGlobal(
       "fetch",
-      vi.fn<typeof fetch>().mockResolvedValue(
-        new Response(JSON.stringify({ results })),
-      ),
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response(JSON.stringify({ results }))),
     );
 
     const result = await tool({
@@ -133,13 +131,15 @@ describe("searchXNG tool", () => {
 
   it("rejects oversized responses before parsing all results", async () => {
     const oversizedResponse = JSON.stringify({
-      results: [{ title: "Result", url: "", content: "x".repeat(2 * 1024 * 1024) }],
+      results: [
+        { title: "Result", url: "", content: "x".repeat(2 * 1024 * 1024) },
+      ],
     });
     vi.stubGlobal(
       "fetch",
-      vi.fn<typeof fetch>().mockResolvedValue(
-        new Response(oversizedResponse, { status: 200 }),
-      ),
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response(oversizedResponse, { status: 200 })),
     );
 
     await expect(

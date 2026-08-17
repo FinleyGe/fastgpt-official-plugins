@@ -10,8 +10,8 @@ import {
   InputType,
   OutputType,
   SearchResultType,
-  UrlType,
   tool as toolCb,
+  UrlType,
 } from "./src";
 
 const secretSchema = z.object({

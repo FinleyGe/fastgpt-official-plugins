@@ -29,9 +29,18 @@ const SearXNGResponseType = z
   .object({
     results: z.array(
       z.object({
-        title: z.string().nullish().transform((value) => value ?? ""),
-        url: z.string().nullish().transform((value) => value ?? ""),
-        content: z.string().nullish().transform((value) => value ?? ""),
+        title: z
+          .string()
+          .nullish()
+          .transform((value) => value ?? ""),
+        url: z
+          .string()
+          .nullish()
+          .transform((value) => value ?? ""),
+        content: z
+          .string()
+          .nullish()
+          .transform((value) => value ?? ""),
       }),
     ),
   })

@@ -26,8 +26,9 @@ search:
   parameters are cleared, then `q`, `format=json`, and `language=auto` are
   added.
 - Results are returned as `{ result: [{ title, link, snippet }] }`, with at
-  most 10 items. Empty result sets, HTTP errors, invalid JSON or response data,
-  and responses larger than 2 MiB fail the tool call.
+  most 10 items. Missing or `null` result fields become empty strings. Empty
+  result sets, HTTP errors, malformed JSON or result payloads, and responses
+  larger than 2 MiB fail the tool call.
 
 See the [SearXNG Search API documentation](https://docs.searxng.org/dev/search_api.html)
 and the [public instance directory](https://searx.space/) for more information.

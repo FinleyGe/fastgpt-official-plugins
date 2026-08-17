@@ -63,7 +63,7 @@ const tool = defineTool({
       en: "Use a configured SearXNG instance for web search.",
       "zh-CN": "使用配置的 SearXNG 实例进行网络搜索。",
     },
-    version: "0.2.0",
+    version: "0.1.1",
     versionDescription: {
       en: "Use the SearXNG JSON Search API with a configured instance URL.",
       "zh-CN": "使用 SearXNG JSON 搜索 API，并配置实例地址。",

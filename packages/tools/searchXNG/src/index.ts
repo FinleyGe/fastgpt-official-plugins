@@ -2,13 +2,7 @@ import { z } from "zod";
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
-export const UrlType = z
-  .string()
-  .url()
-  .refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-  }, "SearXNG URL must use http or https");
+export const UrlType = z.url({ protocol: /^https?$/ });
 
 export const InputType = z.object({
   query: z.string().min(1),
@@ -25,26 +19,15 @@ export const OutputType = z.object({
   result: z.array(SearchResultType),
 });
 
-const SearXNGResponseType = z
-  .object({
-    results: z.array(
-      z.object({
-        title: z
-          .string()
-          .nullish()
-          .transform((value) => value ?? ""),
-        url: z
-          .string()
-          .nullish()
-          .transform((value) => value ?? ""),
-        content: z
-          .string()
-          .nullish()
-          .transform((value) => value ?? ""),
-      }),
-    ),
-  })
-  .passthrough();
+const SearXNGResponseType = z.looseObject({
+  results: z.array(
+    z.object({
+      title: z.string().nullish().transform((value) => value ?? ""),
+      url: z.string().nullish().transform((value) => value ?? ""),
+      content: z.string().nullish().transform((value) => value ?? ""),
+    }),
+  ),
+});
 
 function getSearchUrl(url: string, query: string): string {
   const endpoint = new URL(url);

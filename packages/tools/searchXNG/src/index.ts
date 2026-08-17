@@ -1,53 +1,98 @@
-import { z } from 'zod';
-import * as cheerio from 'cheerio';
+import { z } from "zod";
 
 export const InputType = z.object({
-  query: z.string(),
-  url: z.string()
+  query: z.string().min(1),
+  url: z.string().url(),
+});
+
+export const SearchResultType = z.object({
+  title: z.string(),
+  link: z.string(),
+  snippet: z.string(),
 });
 
 export const OutputType = z.object({
-  result: z.array(
-    z.object({
-      title: z.string(),
-      link: z.string(),
-      snippet: z.string()
-    })
-  )
+  result: z.array(SearchResultType),
+  error: z.string().optional(),
 });
+
+function getSearchUrl(url: string, query: string): string {
+  const endpoint = new URL(url);
+  const pathname = endpoint.pathname.replace(/\/+$/, "");
+
+  endpoint.pathname = pathname.endsWith("/search")
+    ? pathname || "/search"
+    : `${pathname}/search`;
+  endpoint.search = "";
+  endpoint.searchParams.set("q", query);
+  endpoint.searchParams.set("format", "json");
+  endpoint.searchParams.set("language", "auto");
+
+  return endpoint.toString();
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  return "Unknown SearXNG request error";
+}
 
 export async function tool({
   query,
-  url
+  url,
 }: z.infer<typeof InputType>): Promise<z.infer<typeof OutputType>> {
+  const response = await fetch(getSearchUrl(url, query));
+
+  if (!response.ok) {
+    throw new Error(
+      `SearXNG request failed: ${response.status} ${response.statusText}`,
+    );
+  }
+
   try {
-    const response = await fetch(`${url}?q=${encodeURIComponent(query)}&language=auto`);
-    const html = await response.text();
-    const $ = cheerio.load(html, {
-      xml: false
-    });
-
-    const results: z.infer<typeof OutputType>['result'] = [];
-
-    $('.result').each((_: number, element) => {
-      const $element = $(element);
-      results.push({
-        title: $element.find('h3').text().trim(),
-        link: $element.find('a').first().attr('href') || '',
-        snippet: $element.find('.content').text().trim()
-      });
-    });
+    const data: unknown = await response.json();
+    const results = z
+      .object({
+        results: z.array(
+          z.object({
+            title: z
+              .string()
+              .nullish()
+              .transform((value) => value ?? ""),
+            url: z
+              .string()
+              .nullish()
+              .transform((value) => value ?? ""),
+            content: z
+              .string()
+              .nullish()
+              .transform((value) => value ?? ""),
+          }),
+        ),
+      })
+      .passthrough()
+      .parse(data).results;
 
     if (results.length === 0) {
-      return Promise.reject({
-        error: 'No search results'
-      });
+      throw new Error("No search results");
     }
 
     return {
-      result: results.slice(0, 10)
+      result: results
+        .slice(0, 10)
+        .map(({ title, url: resultUrl, content }) => ({
+          title,
+          link: resultUrl,
+          snippet: content,
+        })),
     };
   } catch (error) {
-    return Promise.reject({ error });
+    throw new Error(getErrorMessage(error));
   }
 }

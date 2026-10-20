@@ -108,6 +108,8 @@ When creating or updating plugins, keep these conventions:
 
 - Use TypeScript ESM.
 - Reuse `@fastgpt-plugin/sdk-factory` for entries and schemas.
+- Define public fields with `defineInputSchema` and `defineOutputSchema`, using English and Simplified Chinese titles and descriptions.
+- Keep plugin and child names/descriptions bilingual (`en` and `zh-CN`); do not use the legacy `toolDescription` field.
 - Use `fastgpt-tools-<tool-name>` as the package name.
 - Declare external credentials as plugin secrets or input parameters, and keep them out of source code.
 - Reuse local helper functions from nearby plugins for network requests, file uploads, and error handling.

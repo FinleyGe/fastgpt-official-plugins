@@ -108,6 +108,8 @@ pnpm fastgpt-plugin create <tool-name> --type tool-suite --cwd packages/tools --
 
 - 使用 TypeScript ESM。
 - 入口和 schema 复用 `@fastgpt-plugin/sdk-factory`。
+- 输入和输出字段使用 `defineInputSchema`、`defineOutputSchema`，并提供英文与简体中文标题和说明。
+- 插件和子工具的名称、说明使用 `en` 与 `zh-CN` 双语字段；不要使用旧的 `toolDescription` 字段。
 - 插件包名使用 `fastgpt-tools-<tool-name>`。
 - 外部密钥通过插件 secret 或输入参数声明，避免写入源码。
 - 网络请求、文件上传、错误处理复用相近插件的本地工具函数。
